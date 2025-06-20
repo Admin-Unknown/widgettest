@@ -1,0 +1,17 @@
+{
+  "name": "Lead Reassignment Tool",
+  "version": "1.0",
+  "vendor": "Simply Tech",
+  "platform": "crm",
+  "url": "widget.html",
+  "location": {
+    "home": {
+      "label": "Lead Reassigner"
+    }
+  },
+  "permissions": {
+    "crm.modules.ALL": {},
+    "crm.functions.execute": {},
+    "crm.users.READ": {}
+  }
+}

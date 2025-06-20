@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+<script src="https://static.zohocdn.com/crm/widget/js/widget-sdk.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    select, input, button { width: 100%; margin: 10px 0; padding: 8px; }
+    label { font-weight: bold; }
+    #status { margin-top: 10px; color: green; }
+  </style>
+</head>
+<body>
+  <h3>Reassign Leads & Create Calls</h3>
+
+  <label for="sourceUserSelect">Source Owner:</label>
+  <select id="sourceUserSelect"></select>
+
+  <label for="targetUserSelect">Target Owner:</label>
+  <select id="targetUserSelect"></select>
+
+  <label for="qtyInput">Number of Leads to Reassign:</label>
+  <input type="number" id="qtyInput" min="1" value="5" />
+
+  <button onclick="reassignLeads()">Run Assignment</button>
+
+  <div id="status"></div>
+
+  <script>
+    ZOHO.embeddedApp.on("PageLoad", function() {
+      ZOHO.CRM.API.getAllUsers().then(function(data){
+        const source = document.getElementById("sourceUserSelect");
+        const target = document.getElementById("targetUserSelect");
+
+        data.users.forEach(user => {
+          let opt1 = new Option(user.full_name, user.id);
+          let opt2 = new Option(user.full_name, user.id);
+          source.add(opt1);
+          target.add(opt2.cloneNode(true));
+        });
+      });
+    });
+
+    function reassignLeads() {
+      const sourceId = document.getElementById("sourceUserSelect").value;
+      const targetId = document.getElementById("targetUserSelect").value;
+      const qty = parseInt(document.getElementById("qtyInput").value, 10);
+      const status = document.getElementById("status");
+
+      if (!sourceId || !targetId || isNaN(qty) || qty <= 0) {
+        status.innerText = "❌ Please complete all fields correctly.";
+        return;
+      }
+
+      status.innerText = "⏳ Running...";
+
+      ZOHO.CRM.FUNCTIONS.execute("Reassign_Leads_With_Calls", {
+        source_owner_id: sourceId,
+        target_owner_id: targetId,
+        num_to_transfer: qty
+      }).then(function(response){
+        if(response && response.details && response.details.output) {
+          status.innerText = `✅ Done: ${response.details.output.length} leads processed.`;
+        } else {
+          status.innerText = "⚠️ No response or unexpected output.";
+        }
+      }).catch(function(error){
+        console.error(error);
+        status.innerText = "❌ Error: " + JSON.stringify(error);
+      });
+    }
+
+    ZOHO.embeddedApp.init();
+  </script>
+</body>
+</html>
