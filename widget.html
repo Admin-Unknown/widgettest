@@ -27,6 +27,9 @@
   <div id="status"></div>
 
   <script>
+    // Required for Zoho SDK to load in externally hosted widgets
+    window.allowZohoEmbeddedAppSdk = true;
+
     function loadUsers() {
       ZOHO.CRM.API.getAllUsers().then(function(data) {
         const source = document.getElementById("sourceUserSelect");
@@ -78,11 +81,14 @@
       });
     }
 
-    ZOHO.embeddedApp.on("PageLoad", function() {
-      loadUsers();
-    });
-
-    ZOHO.embeddedApp.init();
+    if (typeof ZOHO !== 'undefined') {
+      ZOHO.embeddedApp.on("PageLoad", function() {
+        loadUsers();
+      });
+      ZOHO.embeddedApp.init();
+    } else {
+      document.getElementById("status").innerText = "❌ Not running inside Zoho CRM.";
+    }
   </script>
 </body>
 </html>
