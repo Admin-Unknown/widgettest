@@ -2,16 +2,16 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-<script src="https://static.zohocdn.com/crm/widget/js/widget-sdk.js"></script>
+  <script src="https://live.zwidgets.com/js-sdk/1.3/ZohoEmbededAppSDK.min.js"></script>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    select, input, button { width: 100%; margin: 10px 0; padding: 8px; }
-    label { font-weight: bold; }
-    #status { margin-top: 10px; color: green; }
+    body { font-family: Arial; padding: 20px; max-width: 400px; }
+    label, select, input, button { display: block; width: 100%; margin: 10px 0; padding: 8px; }
+    h2 { margin-bottom: 20px; }
+    #status { margin-top: 10px; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h3>Reassign Leads & Create Calls</h3>
+  <h2>Lead Reassigner</h2>
 
   <label for="sourceUserSelect">Source Owner:</label>
   <select id="sourceUserSelect"></select>
@@ -22,24 +22,32 @@
   <label for="qtyInput">Number of Leads to Reassign:</label>
   <input type="number" id="qtyInput" min="1" value="5" />
 
-  <button onclick="reassignLeads()">Run Assignment</button>
+  <button onclick="reassignLeads()">Reassign Leads</button>
 
   <div id="status"></div>
 
   <script>
-    ZOHO.embeddedApp.on("PageLoad", function() {
-      ZOHO.CRM.API.getAllUsers().then(function(data){
+    function loadUsers() {
+      ZOHO.CRM.API.getAllUsers().then(function(data) {
         const source = document.getElementById("sourceUserSelect");
         const target = document.getElementById("targetUserSelect");
 
-        data.users.forEach(user => {
-          let opt1 = new Option(user.full_name, user.id);
-          let opt2 = new Option(user.full_name, user.id);
-          source.add(opt1);
-          target.add(opt2.cloneNode(true));
-        });
+        if (data && data.users && data.users.length > 0) {
+          data.users.forEach(user => {
+            let opt1 = new Option(user.full_name, user.id);
+            let opt2 = new Option(user.full_name, user.id);
+            source.add(opt1);
+            target.add(opt2.cloneNode(true));
+          });
+        } else {
+          console.error("No users returned", data);
+          document.getElementById("status").innerText = "⚠️ Failed to load users.";
+        }
+      }).catch(err => {
+        console.error("getAllUsers failed", err);
+        document.getElementById("status").innerText = "❌ Error loading users.";
       });
-    });
+    }
 
     function reassignLeads() {
       const sourceId = document.getElementById("sourceUserSelect").value;
@@ -52,23 +60,27 @@
         return;
       }
 
-      status.innerText = "⏳ Running...";
+      status.innerText = "⏳ Reassigning leads...";
 
       ZOHO.CRM.FUNCTIONS.execute("Reassign_Leads_With_Calls", {
         source_owner_id: sourceId,
         target_owner_id: targetId,
         num_to_transfer: qty
-      }).then(function(response){
-        if(response && response.details && response.details.output) {
-          status.innerText = `✅ Done: ${response.details.output.length} leads processed.`;
+      }).then(function(response) {
+        if (response && response.details && response.details.output) {
+          status.innerText = `✅ Done: ${response.details.output.length} leads reassigned.`;
         } else {
-          status.innerText = "⚠️ No response or unexpected output.";
+          status.innerText = "⚠️ Unexpected response from function.";
         }
-      }).catch(function(error){
-        console.error(error);
-        status.innerText = "❌ Error: " + JSON.stringify(error);
+      }).catch(function(error) {
+        console.error("Function execution failed", error);
+        status.innerText = "❌ Error reassigning leads.";
       });
     }
+
+    ZOHO.embeddedApp.on("PageLoad", function() {
+      loadUsers();
+    });
 
     ZOHO.embeddedApp.init();
   </script>
