@@ -30,30 +30,41 @@
   <script>
     window.allowZohoEmbeddedAppSdk = true;
 
-    function loadUsers() {
-      ZOHO.CRM.API.getAllUsers()
-        .then(function(data) {
-          console.log("getAllUsers response:", data);
+function loadUsers() {
+  const status = document.getElementById("status");
+  status.innerText = "🔄 Loading users...";
 
-          const source = document.getElementById("sourceUserSelect");
-          const target = document.getElementById("targetUserSelect");
+  let timeout = setTimeout(() => {
+    status.innerText = "⚠️ Timeout: No user data received after 5 seconds.";
+    console.warn("getAllUsers API is hanging or unresponsive.");
+  }, 5000);
 
-          if (data && data.users && data.users.length > 0) {
-            data.users.forEach(user => {
-              let opt1 = new Option(user.full_name, user.id);
-              let opt2 = new Option(user.full_name, user.id);
-              source.add(opt1);
-              target.add(opt2.cloneNode(true));
-            });
-          } else {
-            document.getElementById("status").innerText = "⚠️ No users returned.";
-          }
-        })
-        .catch(function(err) {
-          console.error("getAllUsers failed:", err);
-          document.getElementById("status").innerText = "❌ Error loading users.";
+  ZOHO.CRM.API.getAllUsers()
+    .then(function(data) {
+      clearTimeout(timeout);
+      console.log("getAllUsers response:", data);
+
+      const source = document.getElementById("sourceUserSelect");
+      const target = document.getElementById("targetUserSelect");
+
+      if (data && data.users && data.users.length > 0) {
+        data.users.forEach(user => {
+          let opt1 = new Option(user.full_name, user.id);
+          let opt2 = new Option(user.full_name, user.id);
+          source.add(opt1);
+          target.add(opt2.cloneNode(true));
         });
-    }
+        status.innerText = "✅ Users loaded.";
+      } else {
+        status.innerText = "⚠️ No users returned.";
+      }
+    })
+    .catch(function(err) {
+      clearTimeout(timeout);
+      console.error("getAllUsers failed:", err);
+      status.innerText = "❌ Error loading users.";
+    });
+}
 
     function reassignLeads() {
       const sourceId = document.getElementById("sourceUserSelect").value;
